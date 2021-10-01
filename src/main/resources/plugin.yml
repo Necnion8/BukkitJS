@@ -1,0 +1,11 @@
+name: BukkitJS
+version: '${version}'
+main: com.gmail.necnionch.myplugin.bukkitjs.bukkit.BukkitJSPlugin
+api-version: 1.17
+authors: [ Necnion8 ]
+
+
+commands:
+  bukkitjavascript:
+    aliases: [bjs, jscr]
+    permission: bukkitjavascript.command.bukkitjavascript
