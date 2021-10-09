@@ -8,15 +8,16 @@ import com.gmail.necnionch.myplugin.bukkitjs.bukkit.api.ScriptLogger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.bukkit.command.Command;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 
-import javax.script.AbstractScriptEngine;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Set;
 
 public class Script {
@@ -29,6 +30,7 @@ public class Script {
     private final File scriptFile;
     private final DynamicCommandManager commandManager;
     private final Set<Command> commands = Sets.newHashSet();
+    private final Set<Listener> eventClassListeners = Sets.newHashSet();
 
     public Script(BukkitJSPlugin owner, EventManager eventManager, DynamicCommandManager commandManager, ScriptEngine engine, String name, File scriptFile) {
         this.owner = owner;
@@ -81,6 +83,23 @@ public class Script {
         eventManager.addHandler(handler);
     }
 
+    public void registerHandler(Class<? extends Event> eventClass, EventHandler handler) {
+        Listener listener = new Listener() {};
+
+        owner.getServer().getPluginManager().registerEvent(eventClass, listener, EventPriority.NORMAL, (l, event) -> {
+            if (event.getClass().equals(eventClass)) {
+                try {
+                    handler.getHandler().onEvent(event);
+                } catch (Throwable e) {
+                    handler.getScript().getLogger().severe("Failed to event handle (Script: " + getName() + ", Event: " + event.getEventName() + ")");
+                    e.printStackTrace();
+                }
+            }
+        }, owner, !handler.isAcceptCancelled());
+
+        eventClassListeners.add(listener);
+    }
+
 
     public void registerCommand(Command command) {
         commandManager.register(this, command);
@@ -111,6 +130,8 @@ public class Script {
     public void unload() {
         logger.info("Unloading " + name + " script");
 
+
+        eventClassListeners.forEach(HandlerList::unregisterAll);
         eventManager.removeHandler(this);
         for (ScriptTask task : Sets.newHashSet(ScriptTask.TASKS.get(this))) {
             task.cancel();

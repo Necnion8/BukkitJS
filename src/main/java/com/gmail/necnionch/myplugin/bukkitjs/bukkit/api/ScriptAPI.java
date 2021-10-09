@@ -9,13 +9,13 @@ import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.openjdk.nashorn.internal.objects.annotations.Function;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.UUID;
@@ -96,6 +96,21 @@ public class ScriptAPI {
         on(eventName, false, callable);
     }
 
+    public void onEvent(Class<? extends Event> eventClass, boolean acceptCancelled, Object callable) {
+        if (!(callable instanceof ScriptObjectMirror))
+            throw new IllegalArgumentException("第三引数は関数でなければなりません");
+
+        script.registerHandler(eventClass, new EventHandler(script, "", event -> {
+            ((ScriptObjectMirror) callable).call(null, event);
+        }, acceptCancelled));
+    }
+
+    public void onEvent(Class<? extends Event> eventClass, Object callable) {
+        if (!(callable instanceof ScriptObjectMirror))
+            throw new IllegalArgumentException("第二引数は関数でなければなりません");
+        onEvent(eventClass, false, callable);
+
+    }
 
     @Function
     public ScriptConfig getConfig() {

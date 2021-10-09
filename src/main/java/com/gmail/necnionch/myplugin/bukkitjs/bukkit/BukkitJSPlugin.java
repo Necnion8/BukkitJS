@@ -6,10 +6,6 @@ import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.ScriptExecutor;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
@@ -18,7 +14,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +52,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         CommandBukkit.register(mainCommand, getCommand("bukkitjavascript"));
 
         getLogger().info("initialing ScriptEngine");
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
         getScriptEngine();
 
         eventManager.register();
