@@ -1,12 +1,16 @@
 package com.gmail.necnionch.myplugin.bukkitjs.bukkit;
 
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.CommandBukkit;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.events.ScriptLoadEvent;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.events.ScriptUnloadEvent;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.Script;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.ScriptExecutor;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 import javax.script.ScriptEngine;
@@ -15,6 +19,8 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -208,6 +214,9 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         }
 
         loadedScripts.add(script);
+
+        getServer().getPluginManager()
+                .callEvent(new ScriptLoadEvent(script));
     }
 
     @Override
@@ -217,6 +226,11 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
 
         if (!scripts.containsValue(script))
             throw new IllegalArgumentException("Unknown script");
+
+        if (isEnabled()) {
+            getServer().getPluginManager()
+                    .callEvent(new ScriptUnloadEvent(script));
+        }
 
         try {
             script.unload();
@@ -241,6 +255,11 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
 
     @Override
     public Script loadScript(File file) throws ScriptException {
+        return loadScript(file, null);
+    }
+
+    @Override
+    public Script loadScript(File file, @Nullable Consumer<Script> preload) throws ScriptException {
         Pattern filter = Pattern.compile("(.+)\\.js$");
 
         Matcher m = filter.matcher(file.getName());
@@ -254,6 +273,9 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         ScriptEngine scriptEngine = getScriptEngine();
         Script script = new Script(this, eventManager, commandManager, scriptEngine, scriptName, file);
         scripts.put(scriptName, script);
+
+        if (preload != null)
+            preload.accept(script);
 
         loadScript(script);
         return script;
@@ -285,6 +307,32 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
             script.unload();
         }
 
+    }
+
+    @Override
+    public <T> T execute(File scriptFile, @Nullable Function<Object, T> parser, @Nullable Consumer<Script> preload) throws ScriptException, IOException {
+        Pattern filter = Pattern.compile("(.+)\\.js$");
+
+        String scriptName = scriptFile.getName();
+        Matcher m = filter.matcher(scriptFile.getName());
+        if (m.find())
+            scriptName = m.group(1);
+
+        Script script = new Script(this, eventManager, commandManager, getScriptEngine(), scriptName, scriptFile);
+
+        if (preload != null)
+            preload.accept(script);
+
+        try {
+            Object ret = script.execute(ScriptExecutor.fromFile(scriptFile.toPath()));
+            if (parser != null)
+                return parser.apply(ret);
+            //noinspection unchecked
+            return (T) ret;
+
+        } finally {
+            script.unload();
+        }
     }
 
 }
