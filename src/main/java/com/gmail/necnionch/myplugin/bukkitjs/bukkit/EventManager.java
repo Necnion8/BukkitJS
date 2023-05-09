@@ -4,8 +4,8 @@ import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.EventHandler;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.Script;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import org.bukkit.event.*;
-import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 
 import java.util.Locale;
 

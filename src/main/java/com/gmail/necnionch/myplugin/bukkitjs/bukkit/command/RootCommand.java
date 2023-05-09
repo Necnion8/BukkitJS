@@ -1,6 +1,9 @@
 package com.gmail.necnionch.myplugin.bukkitjs.bukkit.command;
 
-import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.*;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.CommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.InternalCommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.NotFoundCommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.PermissionCommandError;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.jetbrains.annotations.NotNull;
