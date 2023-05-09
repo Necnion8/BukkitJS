@@ -131,9 +131,10 @@ public class ScriptAPI {
 
 
 
-    public void command(String name, String permission, Object callable) {  // todo: permission is not working
+    public void command(String name, @Nullable String permission, Object callable) {
         if (!(callable instanceof ScriptObjectMirror))
             throw new IllegalArgumentException("第三引数は関数でなければなりません");
+
         Command command = new Command(name) {
             @Override
             public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
@@ -145,20 +146,15 @@ public class ScriptAPI {
                 }
                 return true;
             }
-
-            @Nullable
-            @Override
-            public String getPermission() {
-                return permission;
-            }
         };
+        command.setPermission(permission);
         script.registerCommand(command);
     }
 
     public void command(String name, Object callable) {
         if (!(callable instanceof ScriptObjectMirror))
             throw new IllegalArgumentException("第二引数は関数でなければなりません");
-        command(name, null, callable);
+        command(name, "bukkitjavascript.script-command." + name, callable);
     }
 
 
