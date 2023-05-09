@@ -165,7 +165,7 @@ public class Script {
             task.cancel();
         }
 
-        commands.forEach(c -> commandManager.unregister(this, c));
+        Sets.newHashSet(commands).forEach(this::unregisterCommand);
         commands.clear();
 
         if (engine.get("onUnload") != null) {
