@@ -2,9 +2,12 @@ package com.gmail.necnionch.myplugin.bukkitjs.bukkit.api;
 
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.Script;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.*;
+import java.util.List;
 
 public class ScriptConfig {
     private YamlConfiguration config = new YamlConfiguration();
@@ -77,6 +80,14 @@ public class ScriptConfig {
         return config.getDouble(key, def);
     }
 
+    public long getLong(String key) {
+        return config.getLong(key);
+    }
+
+    public long getLOng(String key, long def) {
+        return config.getLong(key, def);
+    }
+
     public Object get(String key) {
         return config.get(key);
     }
@@ -87,6 +98,15 @@ public class ScriptConfig {
 
     public void set(String key, Object obj) {
         config.set(key, obj);
+    }
+
+    public List<String> getKeys(String key) {
+        ConfigurationSection section = config.getConfigurationSection(key);
+        return (section != null) ? Lists.newArrayList(section.getKeys(false)) : Lists.newArrayList();
+    }
+
+    public List<String> getKeys() {
+        return Lists.newArrayList(config.getKeys(false));
     }
 
 }

@@ -1,14 +1,21 @@
 package com.gmail.necnionch.myplugin.bukkitjs.bukkit;
 
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.Command;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.CommandSender;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.RootCommand;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.CommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.InternalCommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.NotFoundCommandError;
+import com.gmail.necnionch.myplugin.bukkitjs.bukkit.command.errors.PermissionCommandError;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.Script;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.ScriptExecutor;
 import com.google.common.collect.Lists;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.command.ConsoleCommandSender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.script.ScriptException;
 import java.io.File;
@@ -38,7 +45,7 @@ public class MainCommand extends RootCommand {
 
 
     private @NotNull List<String> loadedScripts(CommandSender s, String c, List<String> args) {
-        if (args.size() == 1) {
+        if (checkPermission(s) && args.size() == 1) {
             return generateSuggests(args.get(0), Stream.of(plugin.getScripts())
                     .filter(plugin::isLoaded)
                     .map(Script::getName)
@@ -48,7 +55,7 @@ public class MainCommand extends RootCommand {
     }
 
     private @NotNull List<String> genLoads(CommandSender s, String c, List<String> args) {
-        if (args.size() == 1) {
+        if (checkPermission(s) && args.size() == 1) {
             return generateSuggests(args.get(0), Stream.of(plugin.getScripts())
                     .filter(script -> !plugin.isLoaded(script))
                     .map(Script::getName)
@@ -58,13 +65,15 @@ public class MainCommand extends RootCommand {
     }
 
     private @NotNull List<String> genDisables(CommandSender s, String c, List<String> args) {
-        if (args.size() == 1)
+        if (checkPermission(s) && args.size() == 1)
             return generateSuggests(args.get(0), plugin.getDisabledScript());
         return Collections.emptyList();
     }
 
 
     private void execReload(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         String name = parseFirst(args);
 
         Script script = plugin.getScript(name);
@@ -89,6 +98,8 @@ public class MainCommand extends RootCommand {
     }
 
     private void execLoad(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         String name = parseFirst(args);
 
         Script script = plugin.getScript(name);
@@ -126,6 +137,8 @@ public class MainCommand extends RootCommand {
     }
 
     private void execUnload(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         String name = parseFirst(args);
 
         Script script = plugin.getScript(name);
@@ -140,6 +153,8 @@ public class MainCommand extends RootCommand {
     }
 
     private void execList(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         ComponentBuilder builder = new ComponentBuilder("Scripts: ").color(ChatColor.WHITE);
 
         List<String> l = Lists.newArrayList();
@@ -157,6 +172,8 @@ public class MainCommand extends RootCommand {
     }
 
     private void execEnable(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         String name = parseFirst(args);
 
         if (!Arrays.asList(plugin.getDisabledScript()).contains(name)) {
@@ -181,6 +198,8 @@ public class MainCommand extends RootCommand {
     }
 
     private void execDisable(CommandSender sender, List<String> args) {
+        checkPermissionDeniedThrow(sender);
+
         String name = parseFirst(args);
 
         Script script = plugin.getScript(name);
@@ -198,6 +217,8 @@ public class MainCommand extends RootCommand {
 
 
     private void execDebug(CommandSender s, List<String> args) {
+        checkPermissionDeniedThrow(s);
+
         if (args.isEmpty()) {
             s.sendMessage(new ComponentBuilder("コードを入力してください").color(ChatColor.RED).create());
             return;
@@ -220,6 +241,21 @@ public class MainCommand extends RootCommand {
     }
 
 
+    @Override
+    public void onError(@NotNull CommandSender sender, @Nullable Command command, @NotNull CommandError error) {
+        String message;
+        if (error instanceof PermissionCommandError) {
+            message = "権限がありません";
+        } else if (error instanceof NotFoundCommandError) {
+            message = "不明なコマンドです";
+        } else if (error instanceof InternalCommandError) {
+            message = "内部エラーが発生しました";
+        } else {
+            super.onError(sender, command, error);
+            return;
+        }
+        sender.sendMessage(TextComponent.fromLegacyText(ChatColor.RED + message));
+    }
 
 
     private String parseFirst(List<String> args) {
@@ -231,6 +267,17 @@ public class MainCommand extends RootCommand {
                 }
             };
         return args.get(0);
+    }
+
+
+    private void checkPermissionDeniedThrow(CommandSender sender) {
+        if (!(sender instanceof ConsoleCommandSender))
+            if (!sender.hasPermission(BukkitJSPlugin.COMMAND_PERMISSION.getName()))
+                throw new PermissionCommandError();
+    }
+
+    private boolean checkPermission(CommandSender sender) {
+        return (sender instanceof ConsoleCommandSender) || sender.hasPermission(BukkitJSPlugin.COMMAND_PERMISSION.getName());
     }
 
 

@@ -8,6 +8,7 @@ import com.gmail.necnionch.myplugin.bukkitjs.bukkit.script.ScriptExecutor;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,8 @@ import java.util.regex.Pattern;
 
 
 public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
+    public static final Permission COMMAND_PERMISSION = new Permission("bukkitjavascript.command.bukkitjavascript");
+    public static final Permission COMMAND_PERMISSION_DEFAULT = new Permission("bukkitjavascript.command.default-op");
     static BukkitJSPlugin instance;
     private final MainCommand mainCommand = new MainCommand(this);
     private final ScriptEngineManager manager = new ScriptEngineManager();
@@ -55,7 +58,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         instance = this;
 
         //noinspection ConstantConditions
-        CommandBukkit.register(mainCommand, getCommand("bukkitjavascript"));
+        CommandBukkit.register(mainCommand, getCommand("bjs"));
 
         getLogger().info("initialing ScriptEngine");
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
@@ -115,7 +118,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
                 if (scripts.containsKey(scriptName))
                     continue;
 
-                script = new Script(this, eventManager, commandManager, getScriptEngine(), scriptName, child);
+                script = new Script(this, eventManager, commandManager, scriptName, child);
                 scripts.put(scriptName, script);
             }
 
@@ -270,8 +273,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         if (scripts.containsKey(scriptName))
             throw new IllegalArgumentException("Already exists script name: " + scriptName);
 
-        ScriptEngine scriptEngine = getScriptEngine();
-        Script script = new Script(this, eventManager, commandManager, scriptEngine, scriptName, file);
+        Script script = new Script(this, eventManager, commandManager, scriptName, file);
         scripts.put(scriptName, script);
 
         if (preload != null)
@@ -298,7 +300,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
 
     @Override
     public Object execute(ScriptExecutor executor) throws ScriptException, IOException {
-        Script script = new Script(this, eventManager, commandManager, getScriptEngine(), "SimpleExecuteDebug", null);
+        Script script = new Script(this, eventManager, commandManager, "SimpleExecuteDebug", null);
 
         try {
             return script.execute(executor);
@@ -318,7 +320,7 @@ public final class BukkitJSPlugin extends JavaPlugin implements BukkitJS {
         if (m.find())
             scriptName = m.group(1);
 
-        Script script = new Script(this, eventManager, commandManager, getScriptEngine(), scriptName, scriptFile);
+        Script script = new Script(this, eventManager, commandManager, scriptName, scriptFile);
 
         if (preload != null)
             preload.accept(script);

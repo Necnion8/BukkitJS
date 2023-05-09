@@ -6,6 +6,11 @@ authors: [ Necnion8 ]
 
 
 commands:
-  bukkitjavascript:
-    aliases: [bjs, jscr]
-    permission: bukkitjavascript.command.bukkitjavascript
+  bjs:
+    permission: bukkitjavascript.command.default-op
+
+permissions:
+  bukkitjavascript.command.bukkitjavascript:
+    default: false
+  bukkitjavascript.default-op:
+    default: op

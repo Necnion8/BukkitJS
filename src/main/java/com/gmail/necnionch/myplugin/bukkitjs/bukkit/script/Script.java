@@ -5,6 +5,7 @@ import com.gmail.necnionch.myplugin.bukkitjs.bukkit.DynamicCommandManager;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.EventManager;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.api.ScriptAPI;
 import com.gmail.necnionch.myplugin.bukkitjs.bukkit.api.ScriptLogger;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.bukkit.command.Command;
 import org.bukkit.event.Event;
@@ -12,16 +13,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 public class Script {
-    private final ScriptEngine engine;
+    @Nullable
+    private ScriptEngine engine;
     private final ScriptLogger logger;
     private final String name;
     private final BukkitJSPlugin owner;
@@ -31,20 +35,31 @@ public class Script {
     private final DynamicCommandManager commandManager;
     private final Set<Command> commands = Sets.newHashSet();
     private final Set<Listener> eventClassListeners = Sets.newHashSet();
+    private final Map<String, Object> variables = Maps.newHashMap();
 
-    public Script(BukkitJSPlugin owner, EventManager eventManager, DynamicCommandManager commandManager, ScriptEngine engine, String name, File scriptFile) {
+    public Script(BukkitJSPlugin owner, EventManager eventManager, DynamicCommandManager commandManager, String name, File scriptFile) {
         this.owner = owner;
         this.eventManager = eventManager;
         this.commandManager = commandManager;
-        this.engine = engine;
         this.name = name;
         this.scriptFile = scriptFile;
         this.logger = new ScriptLogger(name);
         this.api = new ScriptAPI(this, owner);
-        putVariables();
     }
 
-    public ScriptEngine getEngine() {
+    @Deprecated
+    public Script(BukkitJSPlugin owner, EventManager eventManager, DynamicCommandManager commandManager, @Nullable ScriptEngine engine, String name, File scriptFile) {
+        this.owner = owner;
+        this.eventManager = eventManager;
+        this.commandManager = commandManager;
+        this.engine = null;
+        this.name = name;
+        this.scriptFile = scriptFile;
+        this.logger = new ScriptLogger(name);
+        this.api = new ScriptAPI(this, owner);
+    }
+
+    public @Nullable ScriptEngine getEngine() {
         return engine;
     }
 
@@ -64,15 +79,27 @@ public class Script {
         return api;
     }
 
+    public Map<String, Object> variables() {
+        return variables;
+    }
 
     public void putVariables() {
+        if (engine == null)
+            throw new NullPointerException("ScriptEngine has not initialized");
+
         engine.put("log", logger);
         engine.put("plugin", owner);
         engine.put("bjs", api);
+
+        variables.forEach(engine::put);
     }
 
     public Object execute(ScriptExecutor executor) throws ScriptException, IOException {
         logger.info("Loading " + name + " script");
+        if (engine == null) {
+            engine = BukkitJSPlugin.getAPI().getScriptEngine();
+        }
+        putVariables();
         return executor.execute(engine);
     }
 
@@ -127,8 +154,10 @@ public class Script {
 
 
     public void unload() {
-        logger.info("Unloading " + name + " script");
+        if (engine == null)
+            return;
 
+        logger.info("Unloading " + name + " script");
 
         eventClassListeners.forEach(HandlerList::unregisterAll);
         eventManager.removeHandler(this);
@@ -147,6 +176,7 @@ public class Script {
             }
         }
 
+        engine = null;
     }
 
 
@@ -184,10 +214,15 @@ public class Script {
     }
 
     public <T> T getAttr(String key, @NotNull Class<T> castTo) {
+        if (engine == null)
+            throw new NullPointerException("ScriptEngine has not initialized");
         return objectTo(castTo, engine.get(key));
     }
 
     public Object invokeFunction(String funcName, Object... args) throws ScriptException, NoSuchMethodException, UnsupportedOperationException {
+        if (engine == null)
+            throw new NullPointerException("ScriptEngine has not initialized");
+
         if (!(engine instanceof Invocable))
             return new UnsupportedOperationException("engine has not invocable");
 

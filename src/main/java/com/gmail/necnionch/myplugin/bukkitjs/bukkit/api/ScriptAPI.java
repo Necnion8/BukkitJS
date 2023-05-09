@@ -81,7 +81,7 @@ public class ScriptAPI {
 
 
 
-    public void on(String eventName, boolean acceptCancelled, Object callable) {
+    public void on(String eventName, boolean acceptCancelled, Object callable) {  // todo: EntityDamageByEntityEventの登録で、EntityDamageEventも呼ばれ二回実行される問題
         if (!(callable instanceof ScriptObjectMirror))
             throw new IllegalArgumentException("第三引数は関数でなければなりません");
 
@@ -131,14 +131,18 @@ public class ScriptAPI {
 
 
 
-    public void command(String name, String permission, Object callable) {
+    public void command(String name, String permission, Object callable) {  // todo: permission is not working
         if (!(callable instanceof ScriptObjectMirror))
             throw new IllegalArgumentException("第三引数は関数でなければなりません");
-
         Command command = new Command(name) {
             @Override
             public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
-                ((ScriptObjectMirror) callable).call(null, sender, args);
+                try {
+                    ((ScriptObjectMirror) callable).call(null, sender, args);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    throw e;
+                }
                 return true;
             }
 
