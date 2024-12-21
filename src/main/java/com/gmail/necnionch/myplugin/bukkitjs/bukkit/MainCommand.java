@@ -229,13 +229,13 @@ public class MainCommand extends RootCommand {
 
         } catch (Throwable e) {
             s.sendMessage(new ComponentBuilder("実行エラー: \n").color(ChatColor.RED)
-                    .append(e.getMessage()).color(ChatColor.RESET)
+                    .append(e.getMessage()).color(ChatColor.WHITE)
                     .create());
             return;
         }
 
         s.sendMessage(new ComponentBuilder("実行結果: ").color(ChatColor.YELLOW)
-                .append(String.valueOf(result)).color(ChatColor.RESET)
+                .append(String.valueOf(result)).color(ChatColor.WHITE)
                 .create());
     }
 
